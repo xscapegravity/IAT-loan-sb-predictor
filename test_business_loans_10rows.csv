@@ -1,0 +1,11 @@
+Business_ID,Business_Age_Years,Industry,Region,Annual_Revenue_AUD,Annual_Profit_AUD,Total_Assets_AUD,Total_Liabilities_AUD,Owner_Credit_Score,Loan_Amount_AUD,Loan_Term_Months,Previous_Loans,Previous_Defaults,Industry_Growth_Rate,Debt_to_Asset_Ratio,Profit_Margin,Loan_to_Revenue_Ratio,Net_Worth,Revenue_per_Year_in_Business,Interest_Coverage_Ratio,Defaulted,Risk_Score,Business_Age_Category,Credit_Score_Category,Loan_Size_Category,Leverage_Category
+TEST1,8,Healthcare,QLD,165405,34492,65984,12955,825,44602,60,1,0,3.41,0.196,0.209,0.27,53029,18378.33,9.664,0,0.102,Established,Excellent,Small,Low
+TEST2,3,Agriculture,SA,280271,44913,258648,61398,600,79420,36,1,0,2.47,0.237,0.16,0.283,197250,70067.75,7.068,0,0.319,Established,Fair,Medium,Low
+TEST3,2,Hospitality,NT,51272,1695,55601,34845,676,18417,24,4,0,0.14,0.627,0.033,0.359,20756,17090.67,1.15,1,0.349,Startup,Good,Small,Medium
+TEST4,5,Construction,QLD,224825,11233,111790,164323,593,26357,48,2,0,1.77,1.47,0.05,0.117,-52533,37470.83,5.325,1,0.749,Established,Fair,Small,High
+TEST5,8,Healthcare,SA,41039,9796,67480,9606,693,6597,36,3,0,4.12,0.142,0.239,0.161,57874,4559.89,18.526,1,0.139,Established,Good,Small,Low
+TEST6,4,Healthcare,NT,63169,5276,26775,22267,832,31357,36,2,0,2.37,0.832,0.084,0.496,4508,12633.8,2.102,0,0.158,Established,Excellent,Small,Medium
+TEST7,24,Construction,NSW,186273,48121,42663,27110,840,57259,12,2,0,5.82,0.635,0.258,0.307,15553,7450.92,10.503,0,0.2,Mature,Excellent,Medium,Medium
+TEST8,7,Professional Services,TAS,36312,3282,55477,39996,450,17951,36,2,0,0.75,0.721,0.09,0.494,15481,4539.0,2.284,0,0.398,Established,Poor,Small,Medium
+TEST9,4,IT,NSW,89496,2780,57522,25229,663,5000,12,2,1,0.72,0.439,0.031,0.056,32293,17899.2,6.933,0,0.265,Established,Good,Small,Low
+TEST10,3,Hospitality,NT,54001,8294,40992,13170,606,19082,48,2,0,4.32,0.321,0.154,0.353,27822,13500.25,5.43,0,0.373,Established,Fair,Small,Low
