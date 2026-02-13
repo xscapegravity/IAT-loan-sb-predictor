@@ -1,90 +1,105 @@
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, current_app
 import pandas as pd
-import numpy as np
 import joblib
 import os
 import sys
 import logging
-from iatd_loan_predictor import DataLoader, DataPreprocessor, ModelTrainer
+from config import Config
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-app = Flask(__name__)
+def create_app(config_class=Config):
+    app = Flask(__name__)
+    app.config.from_object(config_class)
 
-# Log environment details to ensure correct Conda env is loaded
-logging.info(f"Active Conda Env: {os.environ.get('CONDA_DEFAULT_ENV', 'Unknown')}")
-logging.info(f"Python Executable: {sys.executable}")
+    # Log environment details
+    logging.info(f"Active Conda Env: {os.environ.get('CONDA_DEFAULT_ENV', 'Unknown')}")
+    logging.info(f"Python Executable: {sys.executable}")
 
-# Load Artifacts
-MODEL_PATH = "model.joblib"
-PREPROCESSOR_PATH = "preprocessor.joblib"
+    # Load artifacts and attach to app instance
+    load_artifacts(app)
 
-model_trainer = None
-preprocessor = None
+    # Register routes
+    register_routes(app)
 
-def load_artifacts():
-    global model_trainer, preprocessor
+    return app
+
+def load_artifacts(app):
+    """Load model and preprocessor into app config."""
+    model_path = app.config['MODEL_PATH']
+    preprocessor_path = app.config['PREPROCESSOR_PATH']
+
     try:
-        if os.path.exists(MODEL_PATH) and os.path.exists(PREPROCESSOR_PATH):
-            logging.info("Loading model and preprocessor...")
-            model_trainer = joblib.load(MODEL_PATH)
-            preprocessor = joblib.load(PREPROCESSOR_PATH)
+        if os.path.exists(model_path) and os.path.exists(preprocessor_path):
+            logging.info(f"Loading artifacts from {model_path} and {preprocessor_path}...")
+            app.model_trainer = joblib.load(model_path)
+            app.preprocessor = joblib.load(preprocessor_path)
             logging.info("Artifacts loaded successfully.")
         else:
-            logging.warning("Model or preprocessor not found. Please run train_model.py first.")
+            logging.warning(f"Artifacts not found at {model_path} or {preprocessor_path}. Predictions will be unavailable.")
+            app.model_trainer = None
+            app.preprocessor = None
     except Exception as e:
         logging.error(f"Error loading artifacts: {e}")
+        app.model_trainer = None
+        app.preprocessor = None
 
-load_artifacts()
+def register_routes(app):
+    @app.route('/', methods=['GET', 'POST'])
+    def index():
+        prediction = None
+        probability = None
+        error_message = None
 
-@app.route('/', methods=['GET', 'POST'])
-def index():
-    prediction = None
-    probability = None
-    if request.method == 'POST':
-        if model_trainer is None or preprocessor is None:
-            return render_template('index.html', error="Model not loaded. Please contact administrator.")
-        
-        try:
-            # Extract data from form
-            data = {
-                'Total_Debt': float(request.form.get('total_debt', 0)),
-                'Total_Assets': float(request.form.get('total_assets', 0)),
-                'Net_Profit': float(request.form.get('net_profit', 0)),
-                'Total_Revenue': float(request.form.get('total_revenue', 0)),
-                'Loan_Amount': float(request.form.get('loan_amount', 0)),
-                'Years_in_Business': int(request.form.get('years_in_business', 0)),
-                'Credit_Score': int(request.form.get('credit_score', 0)),
-                'Business_Type': request.form.get('business_type', 'Other')
-            }
+        if request.method == 'POST':
+            if not current_app.model_trainer or not current_app.preprocessor:
+                return render_template('index.html', error="Model service unavailable. Please contact support.")
             
-            # Create DataFrame
-            df = pd.DataFrame([data])
-            
-            # Preprocess
-            # Note: is_training=False ensures we use the fit from training
-            df_processed = preprocessor.transform(df, is_training=False)
-            
-            # Predict
-            pred = model_trainer.predict(df_processed)[0]
-            prob = model_trainer.predict_proba(df_processed)[0][1] # Probability of Default (1)
-            
-            prediction = "Denied" if pred == 1 else "Approved"
-            probability = f"{prob:.2%}" if pred == 1 else f"{(1-prob):.2%}" # Confidence
-            
-            # If Approved, confidence is 1 - prob(Default). If Denied, confidence is prob(Default).
-            # Wait, usually businesses want "Risk Score". 
-            # Let's say: Prediction: Default (Risk: High) vs No Default (Risk: Low).
-            # User wants "Approved" vs "Denied".
-            # If Defaulted (1) -> Denied.
-            # If Not Defaulted (0) -> Approved.
-            
-        except Exception as e:
-            logging.error(f"Prediction error: {e}")
-            return render_template('index.html', error=f"Error processing request: {e}")
+            try:
+                # Extract and validate data
+                data = get_form_data(request.form)
+                
+                # Create DataFrame
+                df = pd.DataFrame([data])
+                
+                # Preprocess
+                df_processed = current_app.preprocessor.transform(df, is_training=False)
+                
+                # Predict
+                pred = current_app.model_trainer.predict(df_processed)[0]
+                prob = current_app.model_trainer.predict_proba(df_processed)[0][1] # Probability of Default (1)
+                
+                prediction = "Denied" if pred == 1 else "Approved"
+                # If Approved (0), confidence is 1 - prob(1). If Denied (1), confidence is prob(1).
+                confidence_val = prob if pred == 1 else 1 - prob
+                probability = f"{confidence_val:.2%}"
+                
+            except ValueError as ve:
+                logging.warning(f"Validation error: {ve}")
+                error_message = f"Invalid input: {ve}"
+            except Exception as e:
+                logging.error(f"Prediction error: {e}")
+                error_message = f"An unexpected error occurred. Please try again."
 
-    return render_template('index.html', prediction=prediction, probability=probability)
+        return render_template('index.html', prediction=prediction, probability=probability, error=error_message)
+
+def get_form_data(form_data):
+    """Extracts and validates form data."""
+    try:
+        return {
+            'Total_Debt': float(form_data.get('total_debt', 0)),
+            'Total_Assets': float(form_data.get('total_assets', 0)),
+            'Net_Profit': float(form_data.get('net_profit', 0)),
+            'Total_Revenue': float(form_data.get('total_revenue', 0)),
+            'Loan_Amount': float(form_data.get('loan_amount', 0)),
+            'Years_in_Business': int(form_data.get('years_in_business', 0)),
+            'Credit_Score': int(form_data.get('credit_score', 0)),
+            'Business_Type': form_data.get('business_type', 'Other')
+        }
+    except (ValueError, TypeError) as e:
+        raise ValueError("Please ensure all numeric fields contain valid numbers.") from e
 
 if __name__ == "__main__":
-    app.run(debug=True, port=8000)
+    app = create_app()
+    app.run(debug=app.config['DEBUG'], port=app.config['PORT'])
