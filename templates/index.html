@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Loan Eligibility Predictor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Loan Eligibility Predictor</h1>
+        <p>Enter business details to check loan eligibility instantly.</p>
+      </header>
+
+      <main>
+        {% if error %}
+        <div class="alert error">{{ error }}</div>
+        {% endif %} {% if prediction %}
+        <div
+          class="result-card {{ 'denied' if prediction == 'Denied' else 'approved' }}"
+        >
+          <h2>Result: {{ prediction }}</h2>
+          <p>Confidence: {{ probability }}</p>
+          <a href="/" class="btn-reset">Check Another</a>
+        </div>
+        {% else %}
+        <form method="POST" action="/">
+          <div class="form-grid">
+            <div class="input-group">
+              <label for="total_debt">Total Debt ($)</label>
+              <input
+                type="number"
+                id="total_debt"
+                name="total_debt"
+                required
+                min="0"
+                placeholder="e.g. 50000"
+              />
+            </div>
+
+            <div class="input-group">
+              <label for="total_assets">Total Assets ($)</label>
+              <input
+                type="number"
+                id="total_assets"
+                name="total_assets"
+                required
+                min="0"
+                placeholder="e.g. 150000"
+              />
+            </div>
+
+            <div class="input-group">
+              <label for="net_profit">Net Profit ($)</label>
+              <input
+                type="number"
+                id="net_profit"
+                name="net_profit"
+                required
+                placeholder="e.g. 20000"
+              />
+            </div>
+
+            <div class="input-group">
+              <label for="total_revenue">Total Revenue ($)</label>
+              <input
+                type="number"
+                id="total_revenue"
+                name="total_revenue"
+                required
+                min="0"
+                placeholder="e.g. 100000"
+              />
+            </div>
+
+            <div class="input-group">
+              <label for="loan_amount">Requested Loan Amount ($)</label>
+              <input
+                type="number"
+                id="loan_amount"
+                name="loan_amount"
+                required
+                min="0"
+                placeholder="e.g. 25000"
+              />
+            </div>
+
+            <div class="input-group">
+              <label for="years_in_business">Years in Business</label>
+              <input
+                type="number"
+                id="years_in_business"
+                name="years_in_business"
+                required
+                min="0"
+                max="100"
+                placeholder="e.g. 5"
+              />
+            </div>
+
+            <div class="input-group">
+              <label for="credit_score">Credit Score</label>
+              <input
+                type="range"
+                id="credit_score"
+                name="credit_score"
+                min="300"
+                max="850"
+                value="650"
+                oninput="this.nextElementSibling.value = this.value"
+              />
+              <output>650</output>
+            </div>
+
+            <div class="input-group">
+              <label for="business_type">Business Type</label>
+              <select id="business_type" name="business_type">
+                <option value="Retail">Retail</option>
+                <option value="Tech">Tech</option>
+                <option value="Service">Service</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-submit">Predict Eligibility</button>
+        </form>
+        {% endif %}
+      </main>
+    </div>
+  </body>
+</html>
